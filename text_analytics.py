@@ -25,7 +25,7 @@ class OohAnalyzer:
     total_score_of_all_oohs = 0
 
     # top lists
-    all_users = set()
+    all_users = {}
 
     all_oohs = {}
     all_ooh_counter = {}
@@ -52,6 +52,7 @@ class OohAnalyzer:
     longest_ooh = (None, 0)
     most_upvoted_ooh = (None, -100000000)
     most_oohs_by_user = (None, 0)
+    most_upvotes_from_oohs = (None, 0)
     post_with_most_oohs = (None, 0)
 
     most_common_ooh = (None, 0)
@@ -80,8 +81,8 @@ class OohAnalyzer:
         self.avg_upvotes_per_ooh = self.avg_upvotes_per_ooh / self.unique_ooh_appearances
         self.ooh_chance_in_any_text = self.unique_ooh_appearances / (self.post_count + self.comment_count)
         self.ooh_user_participate_percentage = len(self.different_ooh_users) / len(self.all_users)
+        self.set_most_upvotes_from_oohs()
         self.set_most_common_ooh()
-        self.special_award()
 
         self.avg_ooh_per_active_user = self.ooh_count / len(self.all_users)
         self.avg_ooh_per_ooh_user = self.ooh_count / len(self.different_ooh_users)
@@ -102,14 +103,17 @@ class OohAnalyzer:
             count += self.day_ooh_count[k]
         self.avg_oohs_per_day = count / len(self.day_ooh_count)
 
+    def set_most_upvotes_from_oohs(self):
+        for k in self.all_users:
+            if self.all_users[k] > self.most_upvotes_from_oohs[1]:
+                self.most_upvotes_from_oohs = (k, self.all_users[k])
+
     def set_most_common_ooh(self):
         for k in self.all_oohs:
             amount = self.all_oohs[k]
             if amount > self.most_common_ooh[1]:
                 self.most_common_ooh = (k, amount)
 
-    def special_award(self):
-        pass
 
 
     def process_text_appearance(self, text):
@@ -121,7 +125,8 @@ class OohAnalyzer:
         if text["score"] == 69:
             self.score_69_count += 1
 
-        self.all_users.add(text["author"])
+        if text["author"] not in self.all_users:
+            self.all_users[text["author"]] = 0
 
         local_ooh_count = 0
 
@@ -132,6 +137,7 @@ class OohAnalyzer:
             if not ooh:
                 continue
             local_ooh_count += 1
+            self.all_users[text["author"]] += text["score"]
 
             date = datetime.datetime.fromtimestamp(text["created_utc"])
             if date.date() in self.day_ooh_count:
@@ -213,6 +219,7 @@ class OohAnalyzer:
         print(f"- Longest OOH {self.longest_ooh}")
         print(f"- Most upvoted OOH {self.most_upvoted_ooh}")
         print(f"- Most OOHs by user {self.most_oohs_by_user}")
+        print(f"- Most Upvotes from OOhs {self.most_upvotes_from_oohs}")
         print(f"- Post with most OOhs {self.post_with_most_oohs}")
 
         print("\nOther\n")
